@@ -2,6 +2,9 @@
 
 Speakable notes for presenting this project to a teacher. Keep this beside you while you demo.
 
+**Big idea (explain like a kid):**  
+Imagine you are in a maze looking for treasure. You pick one hallway and walk as far as you can. If you hit a dead end, you walk back and try another door. You leave a sticker on every room so you never walk the same room twice. When you find the treasure, you paint the way home yellow as you walk back. That is Depth-First Search (DFS).
+
 ---
 
 ## 1. One-minute overview
@@ -19,6 +22,12 @@ Speakable notes for presenting this project to a teacher. Keep this beside you w
 
 Code lives mainly in `script.js`. The UI is `index.html`.
 
+**Why like that:**  
+DFS is simple to show: go deep, then backtrack. We are teaching *how searching works*, not how to find the fastest route.
+
+**How it works (kid version):**  
+The computer starts at green and keeps choosing the next square until it finds red — or until every path fails. The first path it finds might be long and twisty. That is okay. “A path” is not the same as “the shortest path.”
+
 ---
 
 ## 2. Problem setup
@@ -31,6 +40,9 @@ Code lives mainly in `script.js`. The UI is `index.html`.
 - **Walls** — blocked cells  
 - **Goal** — find a sequence of moves from \(s\) to \(t\) that avoids walls  
 
+**Explain like a kid:**  
+The grid is a map of little rooms. Green is “you are here.” Red is the treasure. Dark walls are locked doors — you cannot walk through them. You can only step into a room that shares a side with your room (up, left, down, or right — no diagonal shortcuts).
+
 Neighbor order in this project (`getNeighbors`):
 
 1. North  
@@ -40,26 +52,31 @@ Neighbor order in this project (`getNeighbors`):
 
 ```javascript
 // script.js — getNeighbors(i, j)
-function getNeighbors(i, j) {
-  var neighbors = [];
-  if (i > 0) {
-    neighbors.push([i - 1, j]);      // North
+function getNeighbors(i, j) {              // list all valid doors from cell (i, j)
+  var neighbors = [];                      // start empty; order = try order for DFS
+  if (i > 0) {                             // not on top edge?
+    neighbors.push([i - 1, j]);            // add North cell
   }
-  if (j > 0) {
-    neighbors.push([i, j - 1]);      // West
+  if (j > 0) {                             // not on left edge?
+    neighbors.push([i, j - 1]);            // add West cell
   }
-  if (i < totalRows - 1) {
-    neighbors.push([i + 1, j]);      // South
+  if (i < totalRows - 1) {                 // not on bottom edge?
+    neighbors.push([i + 1, j]);            // add South cell
   }
-  if (j < totalCols - 1) {
-    neighbors.push([i, j + 1]);      // East
+  if (j < totalCols - 1) {                 // not on right edge?
+    neighbors.push([i, j + 1]);            // add East cell
   }
-  return neighbors;
+  return neighbors;                        // hand door list to DFS (N → W → S → E)
 }
 ```
 
 **Say this:**  
 “Changing this order changes which path DFS finds first — still not necessarily the shortest.”
+**Why like that:**  
+A computer needs a fixed rule: “Which door do I try first?” We chose North, then West, then South, then East. Any fixed order works for finding *a* path.
+
+**How it works (kid version):**  
+At every room, look at the doors in that same order. Try the first open door. If that hallway fails, come back and try the next door. Change the order and you might take a different hallway first — like always turning left vs always turning right.
 
 ---
 
@@ -76,14 +93,21 @@ If the current cell is the target:
 
 ```javascript
 // script.js — DFS Step 1
-if (i == endCell[0] && j == endCell[1]) {
-  cellsToAnimate.push([[i, j], 'success']);  // yellow path
-  return true;
+if (i == endCell[0] && j == endCell[1]) {  // stop rule: are we on the target?
+  cellsToAnimate.push([[i, j], 'success']); // queue yellow paint for the animation movie
+  return true;                              // tell caller “path found”; stop this branch
 }
 ```
 
 **Say this:**  
 “If we are on the target, we found a path. We mark it and return success up the call stack.”
+**Why like that:**  
+We need a clear stop rule: “Did we reach the treasure?” Without this check, the search would never know it won.
+
+**How it works (kid version):**  
+You open a door and — surprise — you are in the treasure room. Shout “Found it!” (return `true`) and paint that room yellow. Then walk back the way you came, telling every room behind you “yes, this way worked.”
+
+---
 
 ### Step 2 — Mark and explore
 
@@ -94,12 +118,19 @@ Otherwise:
 
 ```javascript
 // script.js — DFS Step 2
-visited[i][j] = true;
-cellsToAnimate.push([[i, j], 'searching']);  // purple
+visited[i][j] = true;                       // algorithm memory: sticker so we never re-enter
+cellsToAnimate.push([[i, j], 'searching']); // visual only: queue purple for the movie
 ```
 
 **Say this:**  
 “We mark this cell so we never enter it again, then show it as searching.”
+**Why like that:**  
+If we do not mark rooms, we might walk in circles forever. Visited = “I already checked here.”
+
+**How it works (kid version):**  
+Put a sticker on the floor of this room, then paint it purple so the audience can see “we are exploring here.” Later, if a hallway leads back to a sticker, we skip it. No loops, no getting lost.
+
+---
 
 ### Step 3 — Try each neighbor
 
@@ -110,12 +141,12 @@ For each neighbor in order N → W → S → E:
 
 ```javascript
 // script.js — DFS Step 3
-var neighbors = getNeighbors(i, j);
-for (var k = 0; k < neighbors.length; k++) {
-  var m = neighbors[k][0];
-  var n = neighbors[k][1];
-  if (!visited[m][n]) {
-    var pathFound = DFS(m, n, visited);  // go deeper
+var neighbors = getNeighbors(i, j);         // doors from here, order N → W → S → E
+for (var k = 0; k < neighbors.length; k++) { // try each door one by one (depth-first)
+  var m = neighbors[k][0];                  // neighbor row
+  var n = neighbors[k][1];                  // neighbor column
+  if (!visited[m][n]) {                     // skip stickered cells (walls or already explored)
+    var pathFound = DFS(m, n, visited);     // recursion: step in and go deeper
     // Step 4 handles pathFound === true
   }
 }
@@ -123,6 +154,13 @@ for (var k = 0; k < neighbors.length; k++) {
 
 **Say this:**  
 “DFS goes as deep as possible along one branch before trying the next. The recursion call stack *is* the DFS stack.”
+**Why like that:**  
+“Depth-first” means: finish one hallway completely before trying the next door. That is what makes DFS different from BFS (which spreads out like ripples).
+
+**How it works (kid version):**  
+From your room, try door 1. Walk *all the way* down that hallway (and its side halls) before you come back and try door 2. Calling `DFS` again is like stepping into the next room and repeating the same rules. Each step deeper is another call stacked on top — like a pile of “remember where I came from” notes.
+
+---
 
 ### Step 4 — Success on the way back
 
@@ -133,14 +171,21 @@ If a recursive call returns `true`:
 
 ```javascript
 // script.js — DFS Step 4
-if (pathFound) {
-  cellsToAnimate.push([[i, j], 'success']);  // yellow
-  return true;
+if (pathFound) {                            // did the deeper call find the target?
+  cellsToAnimate.push([[i, j], 'success']); // this current cell is on the path → queue yellow
+  return true;                              // pass success up; stop trying other doors
 }
 ```
 
 **Say this:**  
 “The yellow path is built during successful backtracking. Each cell that led to the target paints itself yellow as we return.”
+**Why like that:**  
+We do not store a separate “parent map” to rebuild the path. The successful return values *are* the path. Each room that helped find the treasure paints itself yellow on the way home.
+
+**How it works (kid version):**  
+Your friend deeper in the maze yells “I found it!” You paint *your* room yellow too, then yell the same thing to the room behind you. Breadcrumbs appear backward from the treasure to the start — that yellow trail is the path.
+
+---
 
 ### Step 5 — Dead end
 
@@ -151,12 +196,19 @@ If no neighbor works:
 
 ```javascript
 // script.js — DFS Step 5
-cellsToAnimate.push([[i, j], 'visited']);  // pink
-return false;
+cellsToAnimate.push([[i, j], 'visited']);   // queue pink: dead end for the audience
+return false;                               // tell caller “not this way” → backtrack
 ```
 
 **Say this:**  
 “Pink means this branch failed. We backtrack and try another direction.”
+**Why like that:**  
+Failed branches must return `false` so the previous room knows to try its next door. Pink shows the audience: “We looked here; it did not lead to the treasure.”
+
+**How it works (kid version):**  
+Every door from this room led nowhere (or into sticker rooms). Say “Nope!” (return `false`), paint the room pink, and walk back. The room behind you hears “nope” and tries its next door. That walking-back is backtracking.
+
+---
 
 ### Pseudocode (say out loud)
 
@@ -188,36 +240,44 @@ DFS(i, j, visited):
 
 ```javascript
 // script.js — traverseGraph()
-async function traverseGraph() {
-  inProgress = true;
-  clearBoard(true);                          // keep existing walls
-  var visited = createVisited();             // walls already "visited"
-  var pathFound = DFS(startCell[0], startCell[1], visited);
-  await animateCells();                      // paint searching → path
-  inProgress = false;
-  justFinished = true;
+async function traverseGraph() {            // Start DFS button handler
+  inProgress = true;                        // lock UI so user cannot start another run
+  clearBoard(true);                         // wipe search colors; keep walls
+  var visited = createVisited();            // sticker chart; walls start already visited
+  var pathFound = DFS(startCell[0], startCell[1], visited); // full search; fills cellsToAnimate
+  await animateCells();                     // play the movie of recorded steps
+  inProgress = false;                       // unlock UI
+  justFinished = true;                      // next edit can clear leftover search colors
 }
 ```
 
 **Say this:**  
 “Search finishes first in memory. Then we replay every step as animation.”
+**Why like that:**  
+The brain of the algorithm (DFS) runs fast. The eyes of the audience need a slow movie. So we record every step in a list, then play the list back.
+
+**How it works (kid version):**  
+First, finish all your homework in your head and write every move on a notepad (`cellsToAnimate`). Then play the notepad as a cartoon, one square at a time (10 ms each). Walls are pre-marked visited so they act like “already stickered — do not enter.”
 
 ---
 
 ## 4. What you see on screen
 
-| Color / class | Meaning |
-|---------------|---------|
-| Green (`start`) | Start cell |
-| Red (`end`) | Target cell |
-| Dark (`wall`) | Blocked |
-| Purple (`searching`) | Just entered / expanding |
-| Pink (`visited`) | Explored; dead end / failed branch |
-| Yellow (`success`) | On the path found by backtracking |
-| White | Not yet explored |
+| Color / class | Meaning | Explain like a kid |
+|---------------|---------|-------------------|
+| Green (`start`) | Start cell | “You start here.” |
+| Red (`end`) | Target cell | “Treasure is here.” |
+| Dark (`wall`) | Blocked | “Locked door — skip it.” |
+| Purple (`searching`) | Just entered / expanding | “I am exploring this room right now.” |
+| Pink (`visited`) | Explored; dead end / failed branch | “Oops, dead end — I already checked here.” |
+| Yellow (`success`) | On the path found by backtracking | “This room is on the way that worked!” |
+| White | Not yet explored | “Nobody has opened this door yet.” |
 
 **Say this while demoing:**  
 “Watch for deep purple corridors — that is depth-first. Pink is backtracking. Yellow is the recovered path. If the yellow path looks long and winding, that shows DFS is not optimizing length.”
+
+**Why the colors look “deep” not “wide”:**  
+DFS digs one tunnel. BFS would look like a growing circle (wavefront). Purple/pink corridors = we went deep. A long yellow snake = we found *a* path, not the shortest.
 
 ---
 
@@ -225,8 +285,10 @@ async function traverseGraph() {
 
 1. Open `index.html` — show empty grid, green start, red target.  
 2. Explain the graph model (4 moves, walls blocked).  
+   - **Kid line:** “Map of rooms, locked doors, no diagonal jumps.”  
 3. Click **Simple Spiral** *or* draw a few walls by hand.  
    - **Say:** “Spiral only paints walls. It does not search.”  
+   - **Kid line:** “We are building the maze first. Searching comes later.”  
 4. Optionally drag start or target.  
 5. Click **Start DFS**. Narrate:  
    - Purple = going deeper  
@@ -234,6 +296,7 @@ async function traverseGraph() {
    - Yellow = path on successful return  
 6. Point at results (duration / path length).  
 7. Ask: “Why might this path not be shortest?”  
+   - **Kid answer:** “Because we took the first deep hallway that worked, not the smartest shortcut.”  
 8. Click **Clear**, move start/target, run again to show a different path.
 
 ---
@@ -242,13 +305,16 @@ async function traverseGraph() {
 
 Let \(V\) = number of free cells (at most \(25 \times 40 = 1000\)).
 
-| Measure | Bound |
-|---------|--------|
-| Time | \(O(V)\) — each cell entered at most once |
-| Space (visited matrix) | \(O(V)\) |
-| Space (recursion stack) | \(O(V)\) worst case |
+| Measure | Bound | Explain like a kid |
+|---------|--------|-------------------|
+| Time | \(O(V)\) — each cell entered at most once | We check each free room at most once (one sticker per room). |
+| Space (visited matrix) | \(O(V)\) | We keep a sticker chart for the whole map. |
+| Space (recursion stack) | \(O(V)\) worst case | In a long hallway, the “remember where I came from” pile can get as tall as the number of rooms. |
 
 Visible delay is mostly **animation** (10 ms), not DFS compute time.
+
+**Kid version of complexity:**  
+Think of putting one sticker on each free square. We never need more stickers than free squares, and we never re-check a stickered square. That is why time and space are about \(O(V)\). The slow part you *see* is the cartoon replay, not the thinking.
 
 **Key takeaways to close with:**
 
@@ -258,43 +324,53 @@ Visible delay is mostly **animation** (10 ms), not DFS compute time.
 4. Neighbor order (N → W → S → E) decides which path appears first.  
 5. **Simple Spiral** generates walls only; **DFS** alone finds the path.
 
+**Kid closing line:**  
+“We walk deep, leave stickers, backtrack from dead ends, and paint yellow on the way home when we find the treasure. We find a way — not always the shortest way.”
+
 ---
 
 ## 7. Likely teacher questions (short answers)
 
 **Q: Why isn’t this the shortest path?**  
-A: DFS explores deeply along one branch first. BFS (or Dijkstra on unit costs) would find shortest paths on this grid. We use DFS to show depth-first exploration and backtracking.
+A: DFS explores deeply along one branch first. BFS (or Dijkstra on unit costs) would find shortest paths on this grid. We use DFS to show depth-first exploration and backtracking.  
+**Kid line:** We took the first deep hallway that worked, not the nearest treasure map.
 
 **Q: Why this neighbor order?**  
-A: It is an implementation choice. Any fixed order works for finding *a* path; the order changes *which* path we find first.
+A: It is an implementation choice. Any fixed order works for finding *a* path; the order changes *which* path we find first.  
+**Kid line:** The computer needs a rule for “which door first?” Ours is N → W → S → E.
 
 **Q: Where is the DFS stack?**  
-A: The JavaScript call stack from recursive `DFS` calls. Each nested call is one level deeper in the search.
+A: The JavaScript call stack from recursive `DFS` calls. Each nested call is one level deeper in the search.  
+**Kid line:** Each step into a new room adds a “remember this room” note on a pile. Walking back removes notes.
 
 **Q: How do walls work?**  
-A: `createVisited()` marks wall cells as visited before search starts, so DFS never enters them.
+A: `createVisited()` marks wall cells as visited before search starts, so DFS never enters them.  
+**Kid line:** Walls get stickers before the game starts, so we pretend we already “checked” them and skip them.
 
 **Q: How is the yellow path reconstructed?**  
-A: When a recursive call returns `true`, the current cell is queued as `success` before returning. That walks back from the target to the start along the successful branch.
+A: When a recursive call returns `true`, the current cell is queued as `success` before returning. That walks back from the target to the start along the successful branch.  
+**Kid line:** “Found it!” echoes backward, and each echoing room paints itself yellow.
 
 **Q: What does Simple Spiral do?**  
-A: Only generates a spiral pattern of walls from the center. Search runs later when you click Start DFS.
+A: Only generates a spiral pattern of walls from the center. Search runs later when you click Start DFS.  
+**Kid line:** It builds the maze. It does not hunt for the treasure.
 
 **Q: Time complexity?**  
-A: \(O(V)\) for the search; animation is separate and slower on purpose for visualization.
+A: \(O(V)\) for the search; animation is separate and slower on purpose for visualization.  
+**Kid line:** One look per free room; the slow movie is just so humans can watch.
 
 ---
 
 ## Quick reference — functions to point at
 
-| Function | Role |
-|----------|------|
-| `traverseGraph()` | Start button: clear → visited → DFS → animate |
-| `createVisited()` | Walls = already visited |
-| `getNeighbors(i, j)` | N, W, S, E |
-| `DFS(i, j, visited)` | Core algorithm |
-| `animateCells()` | Replay the animation queue |
-| `spiralMaze()` | Wall generator only |
+| Function | Role | Kid line |
+|----------|------|----------|
+| `traverseGraph()` | Start button: clear → visited → DFS → animate | “Do the search, then play the movie.” |
+| `createVisited()` | Walls = already visited | “Pre-sticker the locked doors.” |
+| `getNeighbors(i, j)` | N, W, S, E | “List the four doors in order.” |
+| `DFS(i, j, visited)` | Core algorithm | “Explore deep, backtrack, yell if found.” |
+| `animateCells()` | Replay the animation queue | “Show the notepad as a cartoon.” |
+| `spiralMaze()` | Wall generator only | “Draw the maze walls only.” |
 
 ---
 
